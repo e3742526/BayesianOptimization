@@ -12,9 +12,9 @@ import matplotlib
 if __name__ == "__main__":
     import sys
 
-        ###################
-        # Fill In Code Here
-        ###################
+    runDoe = False
+    s1 = 1.2
+    YVec = np.array([7.7e-3, 11e-3, 15e-3])
 
     if runDoe:
         rmseOut = np.zeros(len(YVec)) 
@@ -56,10 +56,10 @@ if __name__ == "__main__":
 
          X = X.reshape(-1, 1)
 
-         kernel =  ConstantKernel(10.0)*RBF(length_scale=0.1, length_scale_bounds='fixed')
+         kernel =  ConstantKernel(1)*RBF(length_scale=1e-3, length_scale_bounds='fixed')
          gp = GaussianProcessRegressor(
             kernel=kernel,
-            alpha=1e-1,       # noise variance
+            alpha=1e-2,       # noise variance
             normalize_y=True)
 
          gp.fit(X, y)
@@ -86,4 +86,3 @@ if __name__ == "__main__":
          plt.ylabel('RMSE, m/s')
          plt.subplots_adjust(bottom=0.18, left=0.25)
          plt.show()
-
