@@ -2,28 +2,42 @@ from matplotlib.pylab import norm
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from pathlib import Path
 from getExperiment import getExperiment
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel
 import matplotlib
 from scipy.stats import norm
 
+WORKSHOP_DIR = Path(__file__).resolve().parent
+
+
 def runExperiment(x):
-    ###################
-    # Fill In Code Here
-    ###################
-    return output
+    """Return negative RMSE for one or more yield-strength values."""
+    s1 = 1.2
+    y_values = np.atleast_1d(np.asarray(x, dtype=float))
+
+    previous_directory = Path.cwd()
+    try:
+        os.chdir(WORKSHOP_DIR)
+        output = np.array([-getExperiment(s1, y_value) for y_value in y_values])
+    finally:
+        os.chdir(previous_directory)
+
+    return output.item() if np.ndim(x) == 0 else output
 
 def designExperiment(minVal, maxVal, numPoints):
     rndX = np.linspace(minVal, maxVal, numPoints)
     yDOE = runExperiment(rndX)
     return rndX, yDOE
 
+#Y is yield strength which is "x" in the slides
+
 def acquisitionFunction(x, gp, acqFunType='UCB', yBest=None):
  
     yPred, yStd = gp.predict(x.reshape(-1,1), return_std=True)
     if acqFunType == 'UCB':
-        kappa = 1.0
+        kappa = 10.0
         acq = yPred + kappa * yStd
     elif acqFunType == 'PI':
         Z = (yPred - yBest) / yStd
