@@ -14,13 +14,13 @@ y = data[:,1]
 
 # make column data
 X = X.reshape(-1, 1)
-
+kstar = np.linspace(X.min(), X.max(), 200).reshape(-1, 1)
 
 # Kernel and GP setup
-kernel = ConstantKernel(1) * RBF(1)
+kernel = ConstantKernel(2) * RBF(10, length_scale_bounds=(1, 1e2))  # RBF kernel with fixed length scale
 gp = GaussianProcessRegressor(
     kernel=kernel,
-    alpha=0.2,  # noise variance
+    alpha=.2,  # noise variance
     normalize_y=True,
 )
 

@@ -35,17 +35,9 @@ def acquisitionFunction(x, gp, acqFunType='UCB', yBest=None):
  
     yPred, yStd = gp.predict(x.reshape(-1,1), return_std=True)
 
-    ###################
-    # Fill In Code Here
-    # get yPred and yStd
-    # .....
-    ###################
     if acqFunType == 'UCB':
-        ###################
-        # Fill In Code Here
-        # Code UCB
-        # .....
-        ###################
+        kappa = 10.0 
+        acq = yPred + kappa * yStd
     elif acqFunType == 'PI':
         Z = (yPred - yBest) / yStd
         acq = norm.cdf(Z) 
@@ -65,10 +57,10 @@ def searchNextPoint(minVal, maxVal, gp, numPoints=100, acqFunType='UCB', yBest=N
     return nextPoint
 
 matplotlib.rcParams.update({"font.size": 25})
-
+#bounds that it searches (minval to maxval))
 minVal = 0.0
 maxVal = 4.8
-numPoints = 10
+numPoints = 20# Design of experiments points
 
 acqFunType = 'UCB'  # Upper Confidence Bound
 #acqFunType = 'PI'   # Probability of Improvement
