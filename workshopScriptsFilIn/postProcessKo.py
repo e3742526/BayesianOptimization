@@ -1,11 +1,16 @@
 import sys
 import re
 from io import StringIO
+from pathlib import Path
+
 import numpy as np
 
 
-def postProcessKo():
-    with open("ko.dat") as f:
+def postProcessKo(input_path="ko.dat", output_path="tv.txt"):
+    input_path = Path(input_path)
+    output_path = Path(output_path)
+
+    with input_path.open() as f:
         text = f.read()
 
     # Insert an E before exponents that are missing one
@@ -92,7 +97,7 @@ def postProcessKo():
     tv = np.column_stack((time, velocity))
 
     np.savetxt(
-        "tv.txt",
+        output_path,
         tv,
         fmt="%.8e",
         comments=""
@@ -100,4 +105,3 @@ def postProcessKo():
 
 if __name__ == "__main__":
     postProcessKo()
-

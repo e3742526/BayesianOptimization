@@ -86,38 +86,49 @@ def acquisitionFunction(x, gp, acqFunType='UCB', yBest=None):
         acq = improvement * norm.cdf(Z) + yStd * norm.pdf(Z)    
     return acq
 
-# ``scipy.optimize.minimize`` will call this local objective while searching
-# within the parameter bounds.  It only knows how to minimize, so the function
-# returns the negative acquisition even though our high-level goal is to choose
-# the largest acquisition point.
-def objective(x):
-
-    # ``minimize`` supplies a single 1-D vector; GP prediction expects a batch
-    # of rows.  Reshaping makes one candidate look like a batch of one.
-    X = np.asarray(x).reshape(1, -1)
-
-    if acqFunType == 'PI' or acqFunType == 'EI':
-        acq = acquisitionFunction(X, gp, acqFunType, yBest)
-    else:
-        acq = acquisitionFunction(X, gp, acqFunType)
-
-    # L-BFGS-B minimizes, so return negative acquisition.  ``float`` converts
-    # the one-element NumPy result to the scalar SciPy expects.
-    return -float(np.asarray(acq).ravel()[0])
-
 def searchNextPoint(minVal, maxVal, gp, numPoints=16,
                     acqFunType='UCB', yBest=None):
-    ###################
-    # Fill In Code Here
-    ###################
+    # Keep the optimizer callback local so it uses this call's GP, acquisition
+    # type, and best observed value instead of unrelated module globals.
+    def objective(x):
+        # ``minimize`` supplies one vector; GP prediction expects a row batch.
+        candidate = np.asarray(x).reshape(1, -1)
+        acquisition = acquisitionFunction(
+            candidate,
+            gp,
+            acqFunType,
+            yBest,
+        )
 
-    # Slide 110 calls for acquisition search plus gradient search.  A useful
-    # pattern is: generate ``numPoints`` bounded Sobol starts, run L-BFGS-B
-    # from each start with ``bounds=list(zip(minVal, maxVal))``, then keep the
-    # result with the lowest value of ``objective`` (equivalently, greatest
-    # acquisition).  Multiple starts are important because acquisition surfaces
-    # can have several local maxima.  Return only the two-element parameter
-    # vector, preserving the [s1, Y] order expected by runExperiment.
+        # L-BFGS-B minimizes, so negate the acquisition we want to maximize.
+        return -float(np.asarray(acquisition).ravel()[0])
+
+    # Slide 110 calls for acquisition search plus gradient search.  Generate
+    # bounded Sobol starts, run L-BFGS-B from each one, and retain the result
+    # with the lowest objective (equivalently, the greatest acquisition).
+    nearest = int(np.ceil(np.log2(numPoints)))
+    sampler = qmc.Sobol(d=len(minVal), scramble=False)
+    starts = sampler.random_base2(m=nearest)
+    starts = qmc.scale(starts, minVal, maxVal)
+
+    bounds = list(zip(minVal, maxVal))
+    bestResult = None
+
+    for startPoint in starts:
+        result = minimize(
+            objective,
+            startPoint,
+            method='L-BFGS-B',
+            bounds=bounds,
+        )
+
+        if bestResult is None or result.fun < bestResult.fun:
+            bestResult = result
+
+    # ``numPoints`` always produces at least one Sobol start, so a best result
+    # exists.  Return a plain two-element vector in the [s1, Y] order expected
+    # by runExperiment and the append logic below.
+    nextPoint = np.asarray(bestResult.x).reshape(-1)
 
     return nextPoint
 

@@ -60,7 +60,7 @@ def acquisitionFunction(x, gp, acqFunType='UCB', yBest=None):
     if acqFunType == 'UCB':
         # Upper Confidence Bound maximizes mean + kappa*uncertainty.  Larger
         # kappa values explore more; slide 94 suggests trying 0.1, 1, and 10.
-        kappa = 1.0
+        kappa = 0.1 #changed from 1.0 original
         acq = yPred + kappa * yStd
     elif acqFunType == 'PI':
         # Probability of Improvement asks only "how likely is a result better
@@ -84,6 +84,14 @@ def searchNextPoint(minVal, maxVal, gp, numPoints=100, acqFunType='UCB', yBest=N
     # *single* row with the largest score.  The acquisition is cheap because it
     # queries the GP; do not call ``runExperiment`` for every candidate.
     #
+    nearest = int(np.ceil(np.log2(numPoints)))
+    sampler = qmc.Sobol(d=2, scramble=False)
+    candidates = sampler.random_base2(m=nearest)
+    candidates = qmc.scale(candidates, minVal, maxVal)
+
+    acquisition = acquisitionFunction(candidates, gp, acqFunType, yBest)
+    nextPoint = candidates[np.argmax(acquisition)].reshape(-1)
+
     # ``nextPoint`` must be a two-element array, not shape (1, 2), because the
     # loop below indexes it as XNew[0] and XNew[1] before reshaping it for vstack.
     ###################
@@ -121,7 +129,7 @@ gp = GaussianProcessRegressor(
 # true experiment evaluation, which is the update loop in Bayesian optimization.
 gp.fit(X, y)
 
-nItr = 10
+nItr = 3
 
 for i in range(nItr):
     # PI and EI need the best observed objective so far; UCB does not.  This
