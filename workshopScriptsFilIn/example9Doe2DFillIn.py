@@ -30,14 +30,30 @@ def runExperiment(X1,X2):
 # Sobol's ``random_base2`` generator is designed for powers of two.  The slide
 # asks you to increase this exponent and judge when the DOE becomes useful:
 # nDoeExp=2 gives 4 points, nDoeExp=3 gives 8, and so on.
-nDoeExp = 2 #(nPoints = 2^nDoeExp)
+nDoeExp = 9 #(nPoints = 2^nDoeExp)
 
+### different types of experiments below
 doeType = 'sobol'
 #doeType = 'LHC' # lattice hypercube
+
 #doeType = 'random'
 
 ###################
 # Fill In Code Here
+if doeType == 'sobol':
+    sampler = qmc.Sobol(d=2, scramble=False) 
+    # Set to False, will give the same points every time, but scramble=True is more typical.
+    X = sampler.random_base2(m=nDoeExp)
+    X = qmc.scale(X, [-np.pi, -np.pi], [np.pi, np.pi])
+elif doeType == 'LHC':
+    sampler = qmc.LatinHypercube(d=2)
+    X = sampler.random(n=2**nDoeExp)
+    X = qmc.scale(X, [-np.pi, -np.pi], [np.pi, np.pi])
+elif doeType == 'random':
+    X = np.random.uniform(low=-np.pi, high=np.pi, size=(2**nDoeExp,2))
+else:
+    print('doeType not recognized') 
+
 # sobol, LHC, random
 ###################
 # Implement one of the DOE choices from slide 91 here:
